@@ -125,7 +125,6 @@ function BAEntry({ entry }) {
       <td className="px-4 py-4 text-lg font-medium text-gray-900">{entry.name}</td>
       <td className="px-4 py-4 text-lg text-gray-900">{entry.pressure} bar</td>
       <td className="px-4 py-4 text-lg text-gray-900">{new Date(entry.entryTime).toLocaleTimeString()}</td>
-      <td className="px-4 py-4 text-lg text-gray-900">{entry.minutesToEmpty} min</td>
       <td className="px-4 py-4 text-lg text-gray-900">{new Date(calculateWhistleTime(entry.entryTime, entry.minutesToEmpty)).toLocaleTimeString()}</td>
       <td className="px-4 py-4 text-2xl font-mono font-bold text-gray-900">{timeRemaining}</td>
       <td className="px-4 py-4">
@@ -196,11 +195,7 @@ function BAEntryCard({ entry }) {
             <span className="font-semibold text-gray-700">Whistle:</span>
             <p className="text-gray-900">{new Date(calculateWhistleTime(entry.entryTime, entry.minutesToEmpty)).toLocaleTimeString()}</p>
           </div>
-          <div>
-            <span className="font-semibold text-gray-700">Min to Empty:</span>
-            <p className="text-gray-900">{entry.minutesToEmpty} min</p>
-          </div>
-          <div>
+          <div className="col-span-2">
             <span className="font-semibold text-gray-700">Time Remaining:</span>
             <p className="text-3xl font-mono font-bold text-gray-900">{timeRemaining}</p>
           </div>
@@ -474,7 +469,6 @@ export default function BAControlBoard() {
                     <th className="px-4 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Name</th>
                     <th className="px-4 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Entry Pressure</th>
                     <th className="px-4 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Entry Time</th>
-                    <th className="px-4 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Min to Empty</th>
                     <th className="px-4 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Whistle Time</th>
                     <th className="px-4 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Time Remaining</th>
                     <th className="px-4 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Status</th>
