@@ -101,7 +101,7 @@ function formatTimeRemaining(ms) {
   return `${minutes}:${seconds}`;
 }
 
-function BAEntry({ entry }) {
+function BAEntry({ entry, onRemove }) {
   const [timeRemaining, setTimeRemaining] = useState('');
 
   useEffect(() => {
@@ -142,11 +142,20 @@ function BAEntry({ entry }) {
         </span>
       </td>
       <td className="px-4 py-4 text-lg text-gray-900">{entry.comments}</td>
+      <td className="px-4 py-4">
+        <button
+          onClick={() => onRemove(entry)}
+          className="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-sm font-semibold transition-all duration-200"
+          title="Remove from board"
+        >
+          Remove
+        </button>
+      </td>
     </tr>
   );
 }
 
-function BAEntryCard({ entry }) {
+function BAEntryCard({ entry, onRemove }) {
   const [timeRemaining, setTimeRemaining] = useState('');
 
   useEffect(() => {
@@ -207,6 +216,15 @@ function BAEntryCard({ entry }) {
             <p className="text-lg text-gray-900">{entry.comments}</p>
           </div>
         )}
+        
+        <div className="mt-4 pt-4 border-t border-gray-200">
+          <button
+            onClick={() => onRemove(entry)}
+            className="w-full bg-red-600 hover:bg-red-700 text-white px-4 py-3 rounded-lg text-lg font-semibold transition-all duration-200"
+          >
+            Remove from Board
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -274,6 +292,14 @@ export default function BAControlBoard() {
     const now = new Date();
     const timeString = now.toTimeString().slice(0, 5); // HH:MM format
     setForm({ ...form, entryTime: timeString });
+  }
+
+  function removeEntry(entryToRemove) {
+    if (confirm(`Remove ${entryToRemove.name} from BA Team ${entryToRemove.teamNumber}?`)) {
+      setEntries(prevEntries => prevEntries.filter(entry => 
+        !(entry.name === entryToRemove.name && entry.entryTime === entryToRemove.entryTime)
+      ));
+    }
   }
 
   function getStatusPriority(entry) {
@@ -473,17 +499,18 @@ export default function BAControlBoard() {
                     <th className="px-4 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Time Remaining</th>
                     <th className="px-4 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Status</th>
                     <th className="px-4 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Comments</th>
+                    <th className="px-4 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {sortedEntries.map((entry, idx) => <BAEntry key={`${entry.name}-${entry.entryTime}`} entry={entry} />)}
+                  {sortedEntries.map((entry, idx) => <BAEntry key={`${entry.name}-${entry.entryTime}`} entry={entry} onRemove={removeEntry} />)}
                 </tbody>
               </table>
             </div>
             
             {/* Mobile Cards */}
             <div className="lg:hidden divide-y divide-gray-200">
-              {sortedEntries.map((entry, idx) => <BAEntryCard key={`${entry.name}-${entry.entryTime}`} entry={entry} />)}
+              {sortedEntries.map((entry, idx) => <BAEntryCard key={`${entry.name}-${entry.entryTime}`} entry={entry} onRemove={removeEntry} />)}
             </div>
           </div>
         ) : (
