@@ -35,7 +35,7 @@ function calculateMinutesToEmpty(pressure) {
 }
 
 function getStatusInfo(pressure, timeRemaining) {
-  // First check if overdue
+  // First check if overdue (past empty time)
   if (timeRemaining === 'OVERDUE') return { 
     status: 'overdue', 
     color: 'bg-red-200', 
@@ -52,8 +52,8 @@ function getStatusInfo(pressure, timeRemaining) {
   
   const remainingMinutes = timeToMinutes(timeRemaining);
   
-  // Individual status based only on this operator's time remaining
-  if (remainingMinutes <= 0) {
+  // Whistle time: 0.01-6 minutes remaining until exit time (6 minutes before empty)
+  if (remainingMinutes > 0 && remainingMinutes <= 6) {
     return { 
       status: 'whistle', 
       color: 'bg-red-100', 
@@ -62,6 +62,17 @@ function getStatusInfo(pressure, timeRemaining) {
     };
   }
   
+  // Exactly 0 minutes remaining should be overdue (past whistle time)
+  if (remainingMinutes <= 0) {
+    return { 
+      status: 'overdue', 
+      color: 'bg-red-200', 
+      style: { backgroundColor: '#fecaca' },
+      label: 'OVERDUE - EXIT NOW' 
+    };
+  }
+  
+  // Action time: 6-11 minutes remaining
   if (remainingMinutes <= 11) {
     return { 
       status: 'action', 
@@ -71,6 +82,7 @@ function getStatusInfo(pressure, timeRemaining) {
     };
   }
   
+  // Reassess time: 11-17 minutes remaining  
   if (remainingMinutes <= 17) {
     return { 
       status: 'reassess', 
@@ -80,6 +92,7 @@ function getStatusInfo(pressure, timeRemaining) {
     };
   }
   
+  // Working time: 17+ minutes remaining
   return { 
     status: 'working', 
     color: 'bg-green-100', 
@@ -235,6 +248,7 @@ export default function BAControlBoard() {
   const [stagedEntries, setStagedEntries] = useState([]);
   const [history, setHistory] = useState([]);
   const [form, setForm] = useState({ name: '', pressure: '', entryTime: '', comments: '', teamNumber: '' });
+  const [alertedOperators, setAlertedOperators] = useState(new Set());
 
   // Load entries, staged entries and history from localStorage on mount
   useEffect(() => {
@@ -280,6 +294,124 @@ export default function BAControlBoard() {
   useEffect(() => {
     localStorage.setItem('ba-control-history', JSON.stringify(history));
   }, [history]);
+
+  // Monitor entries for critical time alerts
+  useEffect(() => {
+    const checkAlerts = () => {
+      const now = new Date();
+      const newAlertedOperators = new Set(alertedOperators);
+      
+      entries.forEach(entry => {
+        const operatorKey = `${entry.name}-${entry.entryTime}`;
+        const whistleKey = `${operatorKey}-whistle`;
+        const overdueKey = `${operatorKey}-overdue`;
+        
+        const whistleTime = calculateWhistleTime(entry.entryTime, entry.minutesToEmpty);
+        const remainingMs = whistleTime - now;
+        const timeRemaining = formatTimeRemaining(remainingMs);
+        const statusInfo = getStatusInfo(entry.pressure, timeRemaining);
+        
+        // Check for whistle alert (only once per operator)
+        if (statusInfo.status === 'whistle' && !alertedOperators.has(whistleKey)) {
+          console.log(`Whistle alert triggered for ${entry.name}: timeRemaining=${timeRemaining}`);
+          
+          // Try to play audio alert first
+          try {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const playBeep = (frequency, delay = 0) => {
+              setTimeout(() => {
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                oscillator.frequency.value = frequency;
+                oscillator.type = 'square';
+                gainNode.gain.value = 0.3;
+                oscillator.start();
+                oscillator.stop(audioContext.currentTime + 0.5);
+              }, delay);
+            };
+            playBeep(800, 0);
+          } catch (error) {
+            console.log('Audio alert not available:', error);
+          }
+          
+          const alertMessage = `⚠️ WHISTLE TIME ALERT ⚠️\n\nBA Team ${entry.teamNumber} - ${entry.name}\nSTATUS: WHISTLE TIME\n\nEXIT NOW - 6 MINUTES TO EMPTY!`;
+          setTimeout(() => {
+            alert(alertMessage);
+          }, 100);
+          
+          newAlertedOperators.add(whistleKey);
+        }
+        
+        // Check for overdue alert (only once per operator)
+        if (statusInfo.status === 'overdue' && !alertedOperators.has(overdueKey)) {
+          console.log(`Overdue alert triggered for ${entry.name}: timeRemaining=${timeRemaining}`);
+          
+          // Try to play audio alert first
+          try {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            
+            // Play first beep immediately
+            const osc1 = audioContext.createOscillator();
+            const gain1 = audioContext.createGain();
+            osc1.connect(gain1);
+            gain1.connect(audioContext.destination);
+            osc1.frequency.value = 1000;
+            osc1.type = 'square';
+            gain1.gain.value = 0.3;
+            osc1.start();
+            osc1.stop(audioContext.currentTime + 0.5);
+            
+            // Schedule additional beeps
+            setTimeout(() => {
+              const osc2 = audioContext.createOscillator();
+              const gain2 = audioContext.createGain();
+              osc2.connect(gain2);
+              gain2.connect(audioContext.destination);
+              osc2.frequency.value = 1000;
+              osc2.type = 'square';
+              gain2.gain.value = 0.3;
+              osc2.start();
+              osc2.stop(audioContext.currentTime + 0.5);
+            }, 600);
+            
+            setTimeout(() => {
+              const osc3 = audioContext.createOscillator();
+              const gain3 = audioContext.createGain();
+              osc3.connect(gain3);
+              gain3.connect(audioContext.destination);
+              osc3.frequency.value = 1000;
+              osc3.type = 'square';
+              gain3.gain.value = 0.3;
+              osc3.start();
+              osc3.stop(audioContext.currentTime + 0.5);
+            }, 1200);
+          } catch (error) {
+            console.log('Audio alert not available:', error);
+          }
+          
+          const alertMessage = `🚨 CRITICAL ALERT 🚨\n\nBA Team ${entry.teamNumber} - ${entry.name}\nSTATUS: OVERDUE\n\nIMMEDIATE EXIT REQUIRED!`;
+          setTimeout(() => {
+            alert(alertMessage);
+          }, 100);
+          
+          newAlertedOperators.add(overdueKey);
+        }
+      });
+      
+      // Update alerted operators if any new alerts were triggered
+      if (newAlertedOperators.size !== alertedOperators.size) {
+        setAlertedOperators(newAlertedOperators);
+      }
+    };
+
+    // Check immediately and then every 10 seconds
+    checkAlerts();
+    const alertInterval = setInterval(checkAlerts, 10000);
+    
+    return () => clearInterval(alertInterval);
+  }, [entries, alertedOperators]);
 
   function handleAddEntry(e) {
     e.preventDefault();
@@ -341,6 +473,7 @@ export default function BAControlBoard() {
       setEntries([]);
       setStagedEntries([]);
       setHistory([]);
+      setAlertedOperators(new Set());
     }
   }
 
@@ -395,6 +528,14 @@ export default function BAControlBoard() {
       setEntries(prevEntries => prevEntries.filter(entry => 
         !(entry.name === entryToRemove.name && entry.entryTime === entryToRemove.entryTime)
       ));
+      
+      // Clear any alerts for this operator
+      const operatorKey = `${entryToRemove.name}-${entryToRemove.entryTime}`;
+      setAlertedOperators(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(operatorKey);
+        return newSet;
+      });
     }
   }
 
