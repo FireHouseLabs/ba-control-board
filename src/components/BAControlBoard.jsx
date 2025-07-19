@@ -232,9 +232,10 @@ function BAEntryCard({ entry, onRemove }) {
 
 export default function BAControlBoard() {
   const [entries, setEntries] = useState([]);
+  const [history, setHistory] = useState([]);
   const [form, setForm] = useState({ name: '', pressure: '', entryTime: '', comments: '', teamNumber: '' });
 
-  // Load entries from localStorage on mount
+  // Load entries and history from localStorage on mount
   useEffect(() => {
     const savedEntries = localStorage.getItem('ba-control-entries');
     if (savedEntries) {
@@ -244,12 +245,26 @@ export default function BAControlBoard() {
         console.error('Error loading saved entries:', error);
       }
     }
+    
+    const savedHistory = localStorage.getItem('ba-control-history');
+    if (savedHistory) {
+      try {
+        setHistory(JSON.parse(savedHistory));
+      } catch (error) {
+        console.error('Error loading saved history:', error);
+      }
+    }
   }, []);
 
   // Save entries to localStorage whenever entries change
   useEffect(() => {
     localStorage.setItem('ba-control-entries', JSON.stringify(entries));
   }, [entries]);
+
+  // Save history to localStorage whenever history changes
+  useEffect(() => {
+    localStorage.setItem('ba-control-history', JSON.stringify(history));
+  }, [history]);
 
   function handleAddEntry(e) {
     e.preventDefault();
@@ -296,6 +311,16 @@ export default function BAControlBoard() {
 
   function removeEntry(entryToRemove) {
     if (confirm(`Remove ${entryToRemove.name} from BA Team ${entryToRemove.teamNumber}?`)) {
+      // Add to history with exit time
+      const exitTime = new Date().toISOString();
+      const historyEntry = {
+        ...entryToRemove,
+        exitTime: exitTime
+      };
+      
+      setHistory(prevHistory => [...prevHistory, historyEntry]);
+      
+      // Remove from active entries
       setEntries(prevEntries => prevEntries.filter(entry => 
         !(entry.name === entryToRemove.name && entry.entryTime === entryToRemove.entryTime)
       ));
@@ -522,6 +547,99 @@ export default function BAControlBoard() {
             </div>
             <h3 className="text-xl font-semibold text-gray-600 mb-2">No Active Entries</h3>
             <p className="text-gray-500">Add firefighter entries using the form above to start monitoring.</p>
+          </div>
+        )}
+
+        {/* History Section */}
+        {history.length > 0 && (
+          <div className="bg-white rounded-lg shadow-md overflow-hidden mt-6">
+            <div className="px-6 py-4 bg-gray-50 border-b">
+              <h2 className="text-2xl font-semibold text-gray-900">Operation History</h2>
+              <p className="text-sm text-gray-600 mt-1">Complete record of all BA entries and exits</p>
+            </div>
+            
+            {/* Desktop History Table */}
+            <div className="hidden lg:block overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-100">
+                  <tr>
+                    <th className="px-4 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Team</th>
+                    <th className="px-4 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Name</th>
+                    <th className="px-4 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Entry Pressure</th>
+                    <th className="px-4 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Entry Time</th>
+                    <th className="px-4 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Exit Time</th>
+                    <th className="px-4 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Duration</th>
+                    <th className="px-4 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Comments</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {history.map((entry, idx) => {
+                    const entryTime = new Date(entry.entryTime);
+                    const exitTime = new Date(entry.exitTime);
+                    const duration = Math.floor((exitTime - entryTime) / (1000 * 60)); // Duration in minutes
+                    
+                    return (
+                      <tr key={`${entry.name}-${entry.entryTime}`} className="hover:bg-gray-50">
+                        <td className="px-4 py-4 text-lg font-bold text-gray-900">BA {entry.teamNumber}</td>
+                        <td className="px-4 py-4 text-lg font-medium text-gray-900">{entry.name}</td>
+                        <td className="px-4 py-4 text-lg text-gray-900">{entry.pressure} bar</td>
+                        <td className="px-4 py-4 text-lg text-gray-900">{entryTime.toLocaleTimeString()}</td>
+                        <td className="px-4 py-4 text-lg text-gray-900">{exitTime.toLocaleTimeString()}</td>
+                        <td className="px-4 py-4 text-lg text-gray-900">{duration} min</td>
+                        <td className="px-4 py-4 text-lg text-gray-900">{entry.comments}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            
+            {/* Mobile History Cards */}
+            <div className="lg:hidden divide-y divide-gray-200">
+              {history.map((entry, idx) => {
+                const entryTime = new Date(entry.entryTime);
+                const exitTime = new Date(entry.exitTime);
+                const duration = Math.floor((exitTime - entryTime) / (1000 * 60));
+                
+                return (
+                  <div key={`${entry.name}-${entry.entryTime}`} className="p-6">
+                    <div className="flex flex-col space-y-4">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h3 className="text-2xl font-bold text-gray-900">BA {entry.teamNumber} - {entry.name}</h3>
+                          <p className="text-lg text-gray-600">Entry: {entry.pressure} bar</p>
+                        </div>
+                        <span className="inline-flex px-4 py-2 rounded-lg text-lg font-semibold bg-gray-600 text-white">
+                          Exited
+                        </span>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4 text-lg">
+                        <div>
+                          <span className="font-semibold text-gray-700">Entry:</span>
+                          <p className="text-gray-900">{entryTime.toLocaleTimeString()}</p>
+                        </div>
+                        <div>
+                          <span className="font-semibold text-gray-700">Exit:</span>
+                          <p className="text-gray-900">{exitTime.toLocaleTimeString()}</p>
+                        </div>
+                        <div className="col-span-2">
+                          <span className="font-semibold text-gray-700">Duration:</span>
+                          <p className="text-2xl font-mono font-bold text-gray-900">{duration} minutes</p>
+                        </div>
+                      </div>
+                      
+                      {entry.comments && (
+                        <div>
+                          <span className="font-semibold text-gray-700">Comments:</span>
+                          <p className="text-lg text-gray-900">{entry.comments}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
       </div>
