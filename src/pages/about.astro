@@ -1,0 +1,122 @@
+---
+import '../styles/global.css';
+---
+
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>About - BA Control Board</title>
+  </head>
+  <body class="bg-gray-50 text-gray-900">
+    <div class="max-w-4xl mx-auto px-4 py-8">
+      <div class="bg-white rounded-lg shadow-md p-8">
+        <div class="mb-8">
+          <h1 class="text-4xl font-bold text-gray-900 mb-2">About BA Control Board</h1>
+          <div class="w-16 h-1 bg-red-600 mb-6"></div>
+        </div>
+
+        <div class="space-y-8">
+          <section>
+            <h2 class="text-2xl font-semibold text-gray-900 mb-4">How to Use the Control Board</h2>
+            <div class="space-y-4 text-gray-700">
+              <p><strong>Adding a New Entry:</strong></p>
+              <ul class="list-disc ml-6 space-y-2">
+                <li>Enter the firefighter's name</li>
+                <li>Input the current cylinder pressure in bar</li>
+                <li>Add any relevant comments</li>
+                <li>Choose to either "Add Entry" (for immediate entry) or "Stage Entry" (to prepare crew for later entry)</li>
+              </ul>
+
+              <p><strong>Managing Staged Crews:</strong></p>
+              <ul class="list-disc ml-6 space-y-2">
+                <li>Staged entries appear in a separate section and are not actively monitored</li>
+                <li>When a staged crew is ready to enter, click "Enter" - this sets their entry time to now and begins active monitoring</li>
+                <li>This allows you to prepare multiple crews in advance and activate them when they actually enter the hazardous area</li>
+              </ul>
+
+              <p><strong>Monitoring Air Supply:</strong></p>
+              <ul class="list-disc ml-6 space-y-2">
+                <li>The system automatically calculates air depletion time based on pressure</li>
+                <li>Countdown timers show time remaining until whistle time (6 minutes before empty)</li>
+                <li>Entries turn red and show "OVERDUE" when past their calculated empty time</li>
+                <li>Audio alerts notify when entries become overdue</li>
+              </ul>
+
+              <p><strong>Additional Features:</strong></p>
+              <ul class="list-disc ml-6 space-y-2">
+                <li>Download operational history in CSV or PDF format</li>
+                <li>Clear all entries when operations are complete</li>
+              </ul>
+            </div>
+          </section>
+
+          <section>
+            <h2 class="text-2xl font-semibold text-gray-900 mb-4">Safety Features</h2>
+            <div class="space-y-2 text-gray-700">
+              <ul class="list-disc ml-6 space-y-2">
+                <li><strong>Visual Alerts:</strong> Overdue entries are highlighted in red</li>
+                <li><strong>Audio Notifications:</strong> Sound alerts for overdue conditions</li>
+                <li><strong>Real-time Monitoring:</strong> Countdown timers update every second</li>
+                <li><strong>Pressure-based Calculations:</strong> Accurate air supply estimations</li>
+                <li><strong>Whistle Time Warning:</strong> 6-minute safety buffer before calculated empty time</li>
+              </ul>
+            </div>
+          </section>
+
+          <section>
+            <h2 class="text-2xl font-semibold text-gray-900 mb-4">Understanding the Display</h2>
+            <div class="space-y-2 text-gray-700">
+              <ul class="list-disc ml-6 space-y-2">
+                <li><strong>Entry Time:</strong> When the firefighter entered the hazardous area</li>
+                <li><strong>Pressure:</strong> Current cylinder pressure in bar</li>
+                <li><strong>Minutes to Empty:</strong> Calculated air supply duration</li>
+                <li><strong>Whistle Time:</strong> Time when safety signal should be given</li>
+                <li><strong>Time Remaining:</strong> Countdown to whistle time (MM:SS format)</li>
+              </ul>
+            </div>
+          </section>
+
+          <section>
+            <h2 class="text-2xl font-semibold text-gray-900 mb-4">Data Source</h2>
+            <div class="space-y-4 text-gray-700">
+              <p>Air supply calculations are based on the <strong>CFA BA Control Board</strong> reference data for 300 bar cylinders:</p>
+              <div class="bg-gray-50 p-4 rounded-lg">
+                <ul class="space-y-1 text-sm">
+                  <li><strong>300 bar:</strong> 34 minutes to empty (Working)</li>
+                  <li><strong>250 bar:</strong> 28 minutes to empty (Reassess)</li>
+                  <li><strong>150 bar:</strong> 17 minutes to empty (Reassess)</li>
+                  <li><strong>100 bar:</strong> 11 minutes to empty (Action)</li>
+                  <li><strong>55 bar:</strong> 5 minutes to empty (Whistle)</li>
+                </ul>
+              </div>
+              <div class="bg-red-100 border border-red-300 p-3 rounded-lg mt-3">
+                <p class="text-red-800 font-semibold text-sm">
+                  Time of Whistle = Time wearer enters plus minutes to empty minus 6 minutes
+                </p>
+              </div>
+              <p class="text-sm italic">Whistle time is calculated as 6 minutes before the projected empty time, following CFA protocols.</p>
+            </div>
+          </section>
+
+          <div class="border-t pt-8 mt-8">
+            <div class="text-center">
+              <p class="text-gray-600 mb-2">Built and provided free by</p>
+              <a href="https://firehouselabs.com.au" target="_blank" rel="noopener noreferrer" class="text-2xl font-bold text-red-600 hover:text-red-700 transition-colors">fireHouse Labs</a>
+              <p class="text-gray-500 text-sm mt-2">Advancing firefighter safety through technology</p>
+            </div>
+          </div>
+
+          <div class="text-center mt-8">
+            <a
+              href="/"
+              class="inline-block bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 transition-colors"
+            >
+              Back to Control Board
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

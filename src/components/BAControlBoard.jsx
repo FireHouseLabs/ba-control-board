@@ -769,7 +769,16 @@ export default function BAControlBoard() {
               <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
                 BA Control Board
               </h1>
-              <p className="text-gray-600 text-lg">Breathing Apparatus Monitoring System</p>
+              <div className="flex items-center gap-2">
+                <p className="text-gray-600 text-lg">Breathing Apparatus Monitoring System</p>
+                <span className="text-gray-400">-</span>
+                <a 
+                  href="/about" 
+                  className="text-red-600 hover:text-red-700 text-lg underline transition-colors"
+                >
+                  more info
+                </a>
+              </div>
             </div>
             {(entries.length > 0 || stagedEntries.length > 0 || history.length > 0) && (
               <button 
