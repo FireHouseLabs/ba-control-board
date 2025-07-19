@@ -249,6 +249,8 @@ export default function BAControlBoard() {
   const [history, setHistory] = useState([]);
   const [form, setForm] = useState({ name: '', pressure: '', entryTime: '', comments: '', teamNumber: '' });
   const [alertedOperators, setAlertedOperators] = useState(new Set());
+  const [editingStagedEntry, setEditingStagedEntry] = useState(null);
+  const [editComments, setEditComments] = useState('');
 
   // Load entries, staged entries and history from localStorage on mount
   useEffect(() => {
@@ -510,6 +512,30 @@ export default function BAControlBoard() {
       setStagedEntries(prevStaged => prevStaged.filter(entry => 
         !(entry.name === stagedEntry.name && entry.teamNumber === stagedEntry.teamNumber)
       ));
+    }
+  }
+
+  function startEditingStagedEntry(stagedEntry) {
+    setEditingStagedEntry(stagedEntry);
+    setEditComments(stagedEntry.comments || '');
+  }
+
+  function cancelEditingStagedEntry() {
+    setEditingStagedEntry(null);
+    setEditComments('');
+  }
+
+  function saveEditedStagedEntry() {
+    if (editingStagedEntry) {
+      setStagedEntries(prevStaged => 
+        prevStaged.map(entry => 
+          (entry.name === editingStagedEntry.name && entry.teamNumber === editingStagedEntry.teamNumber)
+            ? { ...entry, comments: editComments }
+            : entry
+        )
+      );
+      setEditingStagedEntry(null);
+      setEditComments('');
     }
   }
 
@@ -920,22 +946,71 @@ export default function BAControlBoard() {
                       <td className="px-4 py-4 text-lg font-bold text-gray-900">BA {entry.teamNumber}</td>
                       <td className="px-4 py-4 text-lg font-medium text-gray-900">{entry.name}</td>
                       <td className="px-4 py-4 text-lg text-gray-900">{entry.pressure} bar</td>
-                      <td className="px-4 py-4 text-lg text-gray-900">{entry.comments}</td>
+                      <td className="px-4 py-4 text-lg text-gray-900">
+                        {editingStagedEntry && 
+                         editingStagedEntry.name === entry.name && 
+                         editingStagedEntry.teamNumber === entry.teamNumber ? (
+                          <div className="flex gap-2">
+                            <input
+                              type="text"
+                              value={editComments}
+                              onChange={(e) => setEditComments(e.target.value)}
+                              className="flex-1 px-3 py-2 border-2 border-blue-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                              placeholder="Enter comments..."
+                              autoFocus
+                            />
+                          </div>
+                        ) : (
+                          <span className={entry.comments ? "" : "text-gray-400 italic"}>
+                            {entry.comments || "No comments"}
+                          </span>
+                        )}
+                      </td>
                       <td className="px-4 py-4 space-x-2">
-                        <button
-                          onClick={() => activateStagedEntry(entry)}
-                          className="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm font-semibold transition-all duration-200"
-                          title="Activate and start timing"
-                        >
-                          Enter
-                        </button>
-                        <button
-                          onClick={() => removeStagedEntry(entry)}
-                          className="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-sm font-semibold transition-all duration-200"
-                          title="Remove from staging"
-                        >
-                          Remove
-                        </button>
+                        {editingStagedEntry && 
+                         editingStagedEntry.name === entry.name && 
+                         editingStagedEntry.teamNumber === entry.teamNumber ? (
+                          <>
+                            <button
+                              onClick={saveEditedStagedEntry}
+                              className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-sm font-semibold transition-all duration-200"
+                              title="Save changes"
+                            >
+                              Save
+                            </button>
+                            <button
+                              onClick={cancelEditingStagedEntry}
+                              className="bg-gray-600 hover:bg-gray-700 text-white px-3 py-2 rounded-lg text-sm font-semibold transition-all duration-200"
+                              title="Cancel editing"
+                            >
+                              Cancel
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <button
+                              onClick={() => startEditingStagedEntry(entry)}
+                              className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-sm font-semibold transition-all duration-200"
+                              title="Edit comments"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => activateStagedEntry(entry)}
+                              className="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm font-semibold transition-all duration-200"
+                              title="Activate and start timing"
+                            >
+                              Enter
+                            </button>
+                            <button
+                              onClick={() => removeStagedEntry(entry)}
+                              className="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-sm font-semibold transition-all duration-200"
+                              title="Remove from staging"
+                            >
+                              Remove
+                            </button>
+                          </>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -958,26 +1033,68 @@ export default function BAControlBoard() {
                       </span>
                     </div>
                     
-                    {entry.comments && (
-                      <div>
-                        <span className="font-semibold text-gray-700">Comments:</span>
-                        <p className="text-lg text-gray-900">{entry.comments}</p>
-                      </div>
-                    )}
+                    <div>
+                      <span className="font-semibold text-gray-700">Comments:</span>
+                      {editingStagedEntry && 
+                       editingStagedEntry.name === entry.name && 
+                       editingStagedEntry.teamNumber === entry.teamNumber ? (
+                        <div className="mt-2">
+                          <input
+                            type="text"
+                            value={editComments}
+                            onChange={(e) => setEditComments(e.target.value)}
+                            className="w-full px-3 py-2 border-2 border-blue-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                            placeholder="Enter comments..."
+                            autoFocus
+                          />
+                        </div>
+                      ) : (
+                        <p className={`text-lg mt-1 ${entry.comments ? "text-gray-900" : "text-gray-400 italic"}`}>
+                          {entry.comments || "No comments"}
+                        </p>
+                      )}
+                    </div>
                     
                     <div className="mt-4 pt-4 border-t border-gray-200 space-y-2">
-                      <button
-                        onClick={() => activateStagedEntry(entry)}
-                        className="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg text-lg font-semibold transition-all duration-200"
-                      >
-                        Enter and Start Timing
-                      </button>
-                      <button
-                        onClick={() => removeStagedEntry(entry)}
-                        className="w-full bg-red-600 hover:bg-red-700 text-white px-4 py-3 rounded-lg text-lg font-semibold transition-all duration-200"
-                      >
-                        Remove from Staging
-                      </button>
+                      {editingStagedEntry && 
+                       editingStagedEntry.name === entry.name && 
+                       editingStagedEntry.teamNumber === entry.teamNumber ? (
+                        <>
+                          <button
+                            onClick={saveEditedStagedEntry}
+                            className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg text-lg font-semibold transition-all duration-200"
+                          >
+                            Save Changes
+                          </button>
+                          <button
+                            onClick={cancelEditingStagedEntry}
+                            className="w-full bg-gray-600 hover:bg-gray-700 text-white px-4 py-3 rounded-lg text-lg font-semibold transition-all duration-200"
+                          >
+                            Cancel
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button
+                            onClick={() => startEditingStagedEntry(entry)}
+                            className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg text-lg font-semibold transition-all duration-200"
+                          >
+                            Edit Comments
+                          </button>
+                          <button
+                            onClick={() => activateStagedEntry(entry)}
+                            className="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg text-lg font-semibold transition-all duration-200"
+                          >
+                            Enter and Start Timing
+                          </button>
+                          <button
+                            onClick={() => removeStagedEntry(entry)}
+                            className="w-full bg-red-600 hover:bg-red-700 text-white px-4 py-3 rounded-lg text-lg font-semibold transition-all duration-200"
+                          >
+                            Remove from Staging
+                          </button>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>
