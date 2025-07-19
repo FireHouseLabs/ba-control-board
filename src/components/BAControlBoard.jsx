@@ -369,12 +369,39 @@ export default function BAControlBoard() {
     return Math.max(individualPriority, teamPriority);
   }
 
-  // Sort entries by priority (highest priority first)
+  // Sort entries by team grouping, then priority within teams
   const sortedEntries = [...entries].sort((a, b) => {
+    // If both have team numbers, group teams together
+    if (a.teamNumber && b.teamNumber) {
+      if (a.teamNumber !== b.teamNumber) {
+        // Different teams - sort by team's highest priority
+        const teamAPriority = getStatusPriority(a);
+        const teamBPriority = getStatusPriority(b);
+        
+        if (teamAPriority !== teamBPriority) {
+          return teamBPriority - teamAPriority; // Higher priority team first
+        }
+        
+        // Same team priority, sort by team's shortest time remaining
+        const now = new Date();
+        const teamATime = Math.min(...entries.filter(e => e.teamNumber === a.teamNumber)
+          .map(e => calculateWhistleTime(e.entryTime, e.minutesToEmpty) - now));
+        const teamBTime = Math.min(...entries.filter(e => e.teamNumber === b.teamNumber)
+          .map(e => calculateWhistleTime(e.entryTime, e.minutesToEmpty) - now));
+        return teamATime - teamBTime;
+      } else {
+        // Same team - sort by individual time remaining (shortest first)
+        const now = new Date();
+        const timeA = calculateWhistleTime(a.entryTime, a.minutesToEmpty) - now;
+        const timeB = calculateWhistleTime(b.entryTime, b.minutesToEmpty) - now;
+        return timeA - timeB;
+      }
+    }
+    
+    // Handle entries without team numbers or mixed scenarios
     const priorityA = getStatusPriority(a);
     const priorityB = getStatusPriority(b);
     
-    // If same priority, sort by time remaining (shortest first)
     if (priorityA === priorityB) {
       const now = new Date();
       const timeA = calculateWhistleTime(a.entryTime, a.minutesToEmpty) - now;
