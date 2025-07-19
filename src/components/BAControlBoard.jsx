@@ -298,8 +298,9 @@ export default function BAControlBoard() {
   }
 
   function handleClearBoard() {
-    if (confirm('Are you sure you want to clear all entries? This action cannot be undone.')) {
+    if (confirm('Are you sure you want to clear the entire board including history? This action cannot be undone.')) {
       setEntries([]);
+      setHistory([]);
     }
   }
 
