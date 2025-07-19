@@ -23,9 +23,19 @@ import '../styles/global.css';
               <p><strong>Adding a New Entry:</strong></p>
               <ul class="list-disc ml-6 space-y-2">
                 <li>Enter the firefighter's name</li>
+                <li>Select the team number (1-20) - this groups firefighters working together</li>
                 <li>Input the current cylinder pressure in bar</li>
                 <li>Add any relevant comments</li>
                 <li>Choose to either "Add Entry" (for immediate entry) or "Stage Entry" (to prepare crew for later entry)</li>
+              </ul>
+
+              <p><strong>Team Management:</strong></p>
+              <ul class="list-disc ml-6 space-y-2">
+                <li>Multiple firefighters can be assigned to the same team number (e.g., both "John" and "Sarah" can be assigned to Team 1)</li>
+                <li>Team members are grouped together in the display for easy monitoring</li>
+                <li>The system automatically prioritizes teams based on their most critical member's status</li>
+                <li>Teams are sorted by their highest priority member - if one team member reaches whistle time, the entire team is flagged for recall</li>
+                <li>This ensures teams stay together and the weakest link determines when the team should exit</li>
               </ul>
 
               <p><strong>Managing Staged Crews:</strong></p>
