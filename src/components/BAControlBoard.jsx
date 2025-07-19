@@ -398,6 +398,142 @@ export default function BAControlBoard() {
     }
   }
 
+  function downloadCSV() {
+    if (history.length === 0) {
+      alert('No operational history to download');
+      return;
+    }
+
+    const headers = ['Team', 'Name', 'Entry Pressure (bar)', 'Entry Time', 'Exit Time', 'Duration (minutes)', 'Comments'];
+    const csvData = [headers];
+
+    history.forEach(entry => {
+      const entryTime = new Date(entry.entryTime);
+      const exitTime = new Date(entry.exitTime);
+      const duration = Math.floor((exitTime - entryTime) / (1000 * 60));
+      
+      csvData.push([
+        `BA ${entry.teamNumber}`,
+        entry.name,
+        entry.pressure,
+        entryTime.toLocaleString(),
+        exitTime.toLocaleString(),
+        duration,
+        entry.comments || ''
+      ]);
+    });
+
+    const csvContent = csvData.map(row => 
+      row.map(field => `"${field}"`).join(',')
+    ).join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    
+    const timestamp = new Date().toISOString().split('T')[0];
+    link.setAttribute('download', `BA_Operations_History_${timestamp}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  function downloadPDF() {
+    if (history.length === 0) {
+      alert('No operational history to download');
+      return;
+    }
+
+    // Create a simple HTML document for PDF generation
+    const timestamp = new Date().toLocaleString();
+    const date = new Date().toISOString().split('T')[0];
+    
+    let htmlContent = `
+      <html>
+      <head>
+        <title>BA Operations History</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 20px; }
+          h1 { color: #333; border-bottom: 2px solid #333; padding-bottom: 10px; }
+          table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+          th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+          th { background-color: #f2f2f2; font-weight: bold; }
+          .header-info { margin-bottom: 20px; }
+          .summary { margin-top: 20px; padding: 10px; background-color: #f9f9f9; }
+        </style>
+      </head>
+      <body>
+        <h1>Breathing Apparatus Operations History</h1>
+        <div class="header-info">
+          <p><strong>Report Generated:</strong> ${timestamp}</p>
+          <p><strong>Total Operations:</strong> ${history.length}</p>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Team</th>
+              <th>Name</th>
+              <th>Entry Pressure</th>
+              <th>Entry Time</th>
+              <th>Exit Time</th>
+              <th>Duration</th>
+              <th>Comments</th>
+            </tr>
+          </thead>
+          <tbody>
+    `;
+
+    history.forEach(entry => {
+      const entryTime = new Date(entry.entryTime);
+      const exitTime = new Date(entry.exitTime);
+      const duration = Math.floor((exitTime - entryTime) / (1000 * 60));
+      
+      htmlContent += `
+        <tr>
+          <td>BA ${entry.teamNumber}</td>
+          <td>${entry.name}</td>
+          <td>${entry.pressure} bar</td>
+          <td>${entryTime.toLocaleString()}</td>
+          <td>${exitTime.toLocaleString()}</td>
+          <td>${duration} min</td>
+          <td>${entry.comments || ''}</td>
+        </tr>
+      `;
+    });
+
+    const totalDuration = history.reduce((total, entry) => {
+      const entryTime = new Date(entry.entryTime);
+      const exitTime = new Date(entry.exitTime);
+      return total + Math.floor((exitTime - entryTime) / (1000 * 60));
+    }, 0);
+
+    htmlContent += `
+          </tbody>
+        </table>
+        <div class="summary">
+          <h3>Summary</h3>
+          <p><strong>Total Personnel Operations:</strong> ${history.length}</p>
+          <p><strong>Total Operational Time:</strong> ${totalDuration} minutes</p>
+          <p><strong>Average Operation Duration:</strong> ${Math.round(totalDuration / history.length)} minutes</p>
+        </div>
+      </body>
+      </html>
+    `;
+
+    // Open in new window for printing to PDF
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
+    printWindow.focus();
+    
+    // Auto-trigger print dialog after content loads
+    printWindow.onload = () => {
+      printWindow.print();
+    };
+  }
+
   function getStatusPriority(entry) {
     // Higher numbers = higher priority (show at top)
     const priorityMap = {
@@ -751,8 +887,28 @@ export default function BAControlBoard() {
         {history.length > 0 && (
           <div className="bg-white rounded-lg shadow-md overflow-hidden mt-6">
             <div className="px-6 py-4 bg-gray-50 border-b">
-              <h2 className="text-2xl font-semibold text-gray-900">Operation History</h2>
-              <p className="text-sm text-gray-600 mt-1">Complete record of all BA entries and exits</p>
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div>
+                  <h2 className="text-2xl font-semibold text-gray-900">Operation History</h2>
+                  <p className="text-sm text-gray-600 mt-1">Complete record of all BA entries and exits</p>
+                </div>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <button
+                    onClick={downloadCSV}
+                    className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-semibold text-sm shadow-md hover:shadow-lg transition-all duration-200 whitespace-nowrap"
+                    title="Download as CSV file"
+                  >
+                    Download CSV
+                  </button>
+                  <button
+                    onClick={downloadPDF}
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold text-sm shadow-md hover:shadow-lg transition-all duration-200 whitespace-nowrap"
+                    title="Download as PDF report"
+                  >
+                    Download PDF
+                  </button>
+                </div>
+              </div>
             </div>
             
             {/* Desktop History Table */}
