@@ -1,42 +1,44 @@
-# Astro Starter Kit: Basics
+# BA Control Board
 
-```sh
-npm create astro@latest -- --template basics
-```
+A Breathing Apparatus (BA) Control Board application for safety monitoring and tracking of breathing apparatus entries. Built with Astro, React, and Tailwind CSS.
 
-[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/withastro/astro/tree/latest/examples/basics)
-[![Open with CodeSandbox](https://assets.codesandbox.io/github/button-edit-lime.svg)](https://codesandbox.io/p/sandbox/github/withastro/astro/tree/latest/examples/basics)
-[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/withastro/astro?devcontainer_path=.devcontainer/basics/devcontainer.json)
+## Features
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
+- **Entry Management**: Add new BA entries with name, pressure, entry time, and comments
+- **Pressure Calculations**: Converts pressure readings to time-to-empty using lookup tables
+- **Safety Timers**: Real-time countdown to whistle time (6 minutes before calculated empty time)
+- **Visual Alerts**: Red highlighting for overdue entries and audio notifications
+- **Operational History**: Download functionality for CSV and PDF formats
+- **Staging System**: Stage crew entries before finalizing
+- **Google Analytics**: Integrated usage tracking
 
-![just-the-basics](https://github.com/withastro/astro/assets/2244813/a0a5533c-a856-4198-8470-2d67b1d7c554)
+## Technology Stack
 
-## 🚀 Project Structure
+- **Framework**: Astro with React integration
+- **Styling**: Tailwind CSS v4.1.11
+- **TypeScript**: Configured with strict settings
 
-Inside of your Astro project, you'll see the following folders and files:
+## Project Structure
 
 ```text
 /
 ├── public/
 │   └── favicon.svg
-├── src
-│   ├── assets
-│   │   └── astro.svg
-│   ├── components
-│   │   └── Welcome.astro
-│   ├── layouts
-│   │   └── Layout.astro
-│   └── pages
-│       └── index.astro
+├── src/
+│   ├── components/
+│   │   └── BAControlBoard.jsx     # Main control board component
+│   ├── layouts/
+│   │   └── Layout.astro           # Base layout with GA tracking
+│   ├── pages/
+│   │   └── index.astro            # Root page
+│   └── styles/
+│       └── global.css             # Tailwind CSS imports
 └── package.json
 ```
 
-To learn more about the folder structure of an Astro project, refer to [our guide on project structure](https://docs.astro.build/en/basics/project-structure/).
+## Commands
 
-## 🧞 Commands
-
-All commands are run from the root of the project, from a terminal:
+All commands are run from the root of the project:
 
 | Command                   | Action                                           |
 | :------------------------ | :----------------------------------------------- |
@@ -47,6 +49,23 @@ All commands are run from the root of the project, from a terminal:
 | `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
 | `npm run astro -- --help` | Get help using the Astro CLI                     |
 
-## 👀 Want to learn more?
+## Core Functionality
 
-Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+The BAControlBoard component manages:
+- **Entry Creation**: Form for adding new BA entries
+- **Pressure-to-Time Conversion**: Uses predefined lookup table in `calculateMinutesToEmpty()`
+- **Whistle Time Calculation**: Entry time + minutes to empty - 6 minutes
+- **Real-time Updates**: Countdown timers update every second
+- **Alert System**: Visual and audio notifications for overdue entries
+
+## Safety Features
+
+- Automatic calculation of air supply depletion times
+- Countdown timers for safety protocols
+- Visual alerts for overdue entries
+- Staging system for crew management
+- Operational history tracking
+
+## Analytics
+
+Google Analytics is integrated for usage tracking and monitoring.
