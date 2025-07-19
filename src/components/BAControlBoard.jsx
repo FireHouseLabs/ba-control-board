@@ -232,10 +232,11 @@ function BAEntryCard({ entry, onRemove }) {
 
 export default function BAControlBoard() {
   const [entries, setEntries] = useState([]);
+  const [stagedEntries, setStagedEntries] = useState([]);
   const [history, setHistory] = useState([]);
   const [form, setForm] = useState({ name: '', pressure: '', entryTime: '', comments: '', teamNumber: '' });
 
-  // Load entries and history from localStorage on mount
+  // Load entries, staged entries and history from localStorage on mount
   useEffect(() => {
     const savedEntries = localStorage.getItem('ba-control-entries');
     if (savedEntries) {
@@ -243,6 +244,15 @@ export default function BAControlBoard() {
         setEntries(JSON.parse(savedEntries));
       } catch (error) {
         console.error('Error loading saved entries:', error);
+      }
+    }
+    
+    const savedStagedEntries = localStorage.getItem('ba-control-staged');
+    if (savedStagedEntries) {
+      try {
+        setStagedEntries(JSON.parse(savedStagedEntries));
+      } catch (error) {
+        console.error('Error loading saved staged entries:', error);
       }
     }
     
@@ -260,6 +270,11 @@ export default function BAControlBoard() {
   useEffect(() => {
     localStorage.setItem('ba-control-entries', JSON.stringify(entries));
   }, [entries]);
+
+  // Save staged entries to localStorage whenever staged entries change
+  useEffect(() => {
+    localStorage.setItem('ba-control-staged', JSON.stringify(stagedEntries));
+  }, [stagedEntries]);
 
   // Save history to localStorage whenever history changes
   useEffect(() => {
@@ -297,9 +312,34 @@ export default function BAControlBoard() {
     setForm({ name: '', pressure: '', entryTime: '', comments: '', teamNumber: '' });
   }
 
+  function handleStageEntry(e) {
+    e.preventDefault();
+    
+    // Validate required fields for staging (no entry time needed)
+    if (!form.name || !form.pressure) {
+      return;
+    }
+    
+    const pressure = parseInt(form.pressure);
+    if (isNaN(pressure)) {
+      return;
+    }
+    
+    const newStagedEntry = {
+      name: form.name,
+      pressure,
+      teamNumber: form.teamNumber,
+      comments: form.comments,
+    };
+    
+    setStagedEntries(prevStaged => [...prevStaged, newStagedEntry]);
+    setForm({ name: '', pressure: '', entryTime: '', comments: '', teamNumber: '' });
+  }
+
   function handleClearBoard() {
-    if (confirm('Are you sure you want to clear the entire board including history? This action cannot be undone.')) {
+    if (confirm('Are you sure you want to clear the entire board including staging and history? This action cannot be undone.')) {
       setEntries([]);
+      setStagedEntries([]);
       setHistory([]);
     }
   }
@@ -308,6 +348,36 @@ export default function BAControlBoard() {
     const now = new Date();
     const timeString = now.toTimeString().slice(0, 5); // HH:MM format
     setForm({ ...form, entryTime: timeString });
+  }
+
+  function activateStagedEntry(stagedEntry) {
+    if (confirm(`Activate ${stagedEntry.name} from BA Team ${stagedEntry.teamNumber}?`)) {
+      const minutesToEmpty = calculateMinutesToEmpty(stagedEntry.pressure);
+      
+      // Create a proper date with current time
+      const now = new Date();
+      
+      const newEntry = {
+        ...stagedEntry,
+        minutesToEmpty,
+        entryTime: now.toISOString(),
+      };
+      
+      setEntries(prevEntries => [...prevEntries, newEntry]);
+      
+      // Remove from staged entries
+      setStagedEntries(prevStaged => prevStaged.filter(entry => 
+        !(entry.name === stagedEntry.name && entry.teamNumber === stagedEntry.teamNumber)
+      ));
+    }
+  }
+
+  function removeStagedEntry(stagedEntry) {
+    if (confirm(`Remove ${stagedEntry.name} from staging?`)) {
+      setStagedEntries(prevStaged => prevStaged.filter(entry => 
+        !(entry.name === stagedEntry.name && entry.teamNumber === stagedEntry.teamNumber)
+      ));
+    }
   }
 
   function removeEntry(entryToRemove) {
@@ -520,16 +590,115 @@ export default function BAControlBoard() {
               </div>
             </div>
             
-            <div className="mt-6">
+            <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
               <button 
                 type="submit" 
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-4 rounded-lg font-semibold text-xl shadow-md hover:shadow-lg transition-all duration-200"
+                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-4 rounded-lg font-semibold text-xl shadow-md hover:shadow-lg transition-all duration-200"
               >
                 Add Entry
+              </button>
+              <button 
+                type="button"
+                onClick={handleStageEntry}
+                className="bg-orange-600 hover:bg-orange-700 text-white px-6 py-4 rounded-lg font-semibold text-xl shadow-md hover:shadow-lg transition-all duration-200"
+              >
+                Stage Crew
               </button>
             </div>
           </form>
         </div>
+
+        {/* Staged Entries Table */}
+        {stagedEntries.length > 0 && (
+          <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6">
+            <div className="px-6 py-4 bg-orange-50 border-b">
+              <h2 className="text-2xl font-semibold text-gray-900">Staged Crews</h2>
+              <p className="text-sm text-gray-600 mt-1">RIT and standby crews ready for deployment</p>
+            </div>
+            
+            {/* Desktop Staging Table */}
+            <div className="hidden lg:block overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-100">
+                  <tr>
+                    <th className="px-4 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Team</th>
+                    <th className="px-4 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Name</th>
+                    <th className="px-4 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Pressure</th>
+                    <th className="px-4 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Comments</th>
+                    <th className="px-4 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {stagedEntries.map((entry) => (
+                    <tr key={`${entry.name}-${entry.teamNumber}`} className="hover:bg-gray-50">
+                      <td className="px-4 py-4 text-lg font-bold text-gray-900">BA {entry.teamNumber}</td>
+                      <td className="px-4 py-4 text-lg font-medium text-gray-900">{entry.name}</td>
+                      <td className="px-4 py-4 text-lg text-gray-900">{entry.pressure} bar</td>
+                      <td className="px-4 py-4 text-lg text-gray-900">{entry.comments}</td>
+                      <td className="px-4 py-4 space-x-2">
+                        <button
+                          onClick={() => activateStagedEntry(entry)}
+                          className="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm font-semibold transition-all duration-200"
+                          title="Activate and start timing"
+                        >
+                          Enter
+                        </button>
+                        <button
+                          onClick={() => removeStagedEntry(entry)}
+                          className="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-sm font-semibold transition-all duration-200"
+                          title="Remove from staging"
+                        >
+                          Remove
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            
+            {/* Mobile Staging Cards */}
+            <div className="lg:hidden divide-y divide-gray-200">
+              {stagedEntries.map((entry) => (
+                <div key={`${entry.name}-${entry.teamNumber}`} className="p-6">
+                  <div className="flex flex-col space-y-4">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h3 className="text-2xl font-bold text-gray-900">BA {entry.teamNumber} - {entry.name}</h3>
+                        <p className="text-lg text-gray-600">Pressure: {entry.pressure} bar</p>
+                      </div>
+                      <span className="inline-flex px-4 py-2 rounded-lg text-lg font-semibold bg-orange-600 text-white">
+                        Staged
+                      </span>
+                    </div>
+                    
+                    {entry.comments && (
+                      <div>
+                        <span className="font-semibold text-gray-700">Comments:</span>
+                        <p className="text-lg text-gray-900">{entry.comments}</p>
+                      </div>
+                    )}
+                    
+                    <div className="mt-4 pt-4 border-t border-gray-200 space-y-2">
+                      <button
+                        onClick={() => activateStagedEntry(entry)}
+                        className="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg text-lg font-semibold transition-all duration-200"
+                      >
+                        Enter and Start Timing
+                      </button>
+                      <button
+                        onClick={() => removeStagedEntry(entry)}
+                        className="w-full bg-red-600 hover:bg-red-700 text-white px-4 py-3 rounded-lg text-lg font-semibold transition-all duration-200"
+                      >
+                        Remove from Staging
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Entries Table */}
         {entries.length > 0 ? (
@@ -574,7 +743,7 @@ export default function BAControlBoard() {
               </svg>
             </div>
             <h3 className="text-xl font-semibold text-gray-600 mb-2">No Active Entries</h3>
-            <p className="text-gray-500">Add firefighter entries using the form above to start monitoring.</p>
+            <p className="text-gray-500">Add firefighter entries or stage crews using the form above to start monitoring.</p>
           </div>
         )}
 
