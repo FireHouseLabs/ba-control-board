@@ -771,7 +771,7 @@ export default function BAControlBoard() {
               </h1>
               <p className="text-gray-600 text-lg">Breathing Apparatus Monitoring System</p>
             </div>
-            {entries.length > 0 && (
+            {(entries.length > 0 || stagedEntries.length > 0 || history.length > 0) && (
               <button 
                 onClick={handleClearBoard}
                 className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-semibold text-lg shadow-md hover:shadow-lg transition-all duration-200 w-full sm:w-auto"
