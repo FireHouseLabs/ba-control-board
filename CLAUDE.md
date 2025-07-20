@@ -34,12 +34,14 @@ The BAControlBoard component manages:
 - **Pressure Calculations**: Converts pressure readings to minutes-to-empty using predefined lookup table
 - **Countdown Timers**: Real-time countdown to whistle time (6 minutes before calculated empty time)
 - **Visual Alerts**: Red highlighting for overdue entries
+- **Active Entry Editing**: Click on any active operator row to update current pressure and comments during radio checks
 
 ### Key Business Logic
 - Pressure-to-time conversion in `calculateMinutesToEmpty()` function
 - Whistle time calculation (entry time + minutes to empty - 6 minutes)
 - Real-time countdown updates every second per entry
 - Time formatting with MM:SS display and "OVERDUE" status
+- Pressure update functionality automatically recalculates exit times when operators provide updated readings via radio
 
 ### Configuration
 - Astro config includes React integration and Vite CSS preprocessing

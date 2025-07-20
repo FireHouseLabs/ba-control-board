@@ -30,74 +30,74 @@ function calculateMinutesToEmpty(pressure) {
     const minutes = 5 + ratio * (11 - 5);
     return Math.floor(minutes);
   }
-  
+
   return 0; // Below operational pressure
 }
 
 function getStatusInfo(pressure, timeRemaining) {
   // First check if overdue (past empty time)
-  if (timeRemaining === 'OVERDUE') return { 
-    status: 'overdue', 
-    color: 'bg-red-200', 
+  if (timeRemaining === 'OVERDUE') return {
+    status: 'overdue',
+    color: 'bg-red-200',
     style: { backgroundColor: '#fecaca' },
-    label: 'OVERDUE - EXIT NOW' 
+    label: 'OVERDUE - EXIT NOW'
   };
-  
+
   // Convert time remaining to minutes for comparison
   const timeToMinutes = (timeStr) => {
     if (timeStr === 'OVERDUE') return -1;
     const [minutes, seconds] = timeStr.split(':').map(Number);
     return minutes + (seconds / 60);
   };
-  
+
   const remainingMinutes = timeToMinutes(timeRemaining);
-  
+
   // Whistle time: 0.01-6 minutes remaining until exit time (6 minutes before empty)
   if (remainingMinutes > 0 && remainingMinutes <= 6) {
-    return { 
-      status: 'whistle', 
-      color: 'bg-red-100', 
+    return {
+      status: 'whistle',
+      color: 'bg-red-100',
       style: { backgroundColor: '#fee2e2' },
-      label: 'Whistle - EXIT NOW' 
+      label: 'Whistle - EXIT NOW'
     };
   }
-  
+
   // Exactly 0 minutes remaining should be overdue (past whistle time)
   if (remainingMinutes <= 0) {
-    return { 
-      status: 'overdue', 
-      color: 'bg-red-200', 
+    return {
+      status: 'overdue',
+      color: 'bg-red-200',
       style: { backgroundColor: '#fecaca' },
-      label: 'OVERDUE - EXIT NOW' 
+      label: 'OVERDUE - EXIT NOW'
     };
   }
-  
+
   // Action time: 6-11 minutes remaining
   if (remainingMinutes <= 11) {
-    return { 
-      status: 'action', 
-      color: 'bg-yellow-100', 
+    return {
+      status: 'action',
+      color: 'bg-yellow-100',
       style: { backgroundColor: '#fef3c7' },
-      label: 'Action Time' 
+      label: 'Action Time'
     };
   }
-  
-  // Reassess time: 11-17 minutes remaining  
+
+  // Reassess time: 11-17 minutes remaining
   if (remainingMinutes <= 17) {
-    return { 
-      status: 'reassess', 
-      color: 'bg-green-100', 
+    return {
+      status: 'reassess',
+      color: 'bg-green-100',
       style: { backgroundColor: '#dcfce7' },
-      label: 'Reassess' 
+      label: 'Reassess'
     };
   }
-  
+
   // Working time: 17+ minutes remaining
-  return { 
-    status: 'working', 
-    color: 'bg-green-100', 
+  return {
+    status: 'working',
+    color: 'bg-green-100',
     style: { backgroundColor: '#dcfce7' },
-    label: 'Working Time' 
+    label: 'Working Time'
   };
 }
 
@@ -114,7 +114,7 @@ function formatTimeRemaining(ms) {
   return `${minutes}:${seconds}`;
 }
 
-function BAEntry({ entry, onRemove }) {
+function BAEntry({ entry, onRemove, onEdit }) {
   const [timeRemaining, setTimeRemaining] = useState('');
 
   useEffect(() => {
@@ -133,7 +133,12 @@ function BAEntry({ entry, onRemove }) {
   const statusInfo = getStatusInfo(entry.pressure, timeRemaining);
 
   return (
-    <tr className="hover:bg-gray-50" style={statusInfo.style}>
+    <tr
+      className="hover:bg-gray-50 cursor-pointer transition-colors duration-200"
+      style={statusInfo.style}
+      onClick={() => onEdit(entry)}
+      title="Click to edit pressure and comments"
+    >
       <td className="px-4 py-4 text-lg font-bold text-gray-900">BA {entry.teamNumber}</td>
       <td className="px-4 py-4 text-lg font-medium text-gray-900">{entry.name}</td>
       <td className="px-4 py-4 text-lg text-gray-900">{entry.pressure} bar</td>
@@ -141,7 +146,7 @@ function BAEntry({ entry, onRemove }) {
       <td className="px-4 py-4 text-lg text-gray-900">{new Date(calculateWhistleTime(entry.entryTime, entry.minutesToEmpty)).toLocaleTimeString()}</td>
       <td className="px-4 py-4 text-2xl font-mono font-bold text-gray-900">{timeRemaining}</td>
       <td className="px-4 py-4">
-        <span 
+        <span
           className="inline-flex px-3 py-2 rounded-lg text-lg font-semibold"
           style={{
             backgroundColor: statusInfo.status === 'overdue' ? '#dc2626' :
@@ -157,7 +162,10 @@ function BAEntry({ entry, onRemove }) {
       <td className="px-4 py-4 text-lg text-gray-900">{entry.comments}</td>
       <td className="px-4 py-4">
         <button
-          onClick={() => onRemove(entry)}
+          onClick={(e) => {
+            e.stopPropagation();
+            onRemove(entry);
+          }}
           className="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-sm font-semibold transition-all duration-200"
           title="Remove from board"
         >
@@ -168,7 +176,7 @@ function BAEntry({ entry, onRemove }) {
   );
 }
 
-function BAEntryCard({ entry, onRemove }) {
+function BAEntryCard({ entry, onRemove, onEdit }) {
   const [timeRemaining, setTimeRemaining] = useState('');
 
   useEffect(() => {
@@ -187,14 +195,18 @@ function BAEntryCard({ entry, onRemove }) {
   const statusInfo = getStatusInfo(entry.pressure, timeRemaining);
 
   return (
-    <div className="p-6" style={statusInfo.style}>
+    <div
+      className="p-6 cursor-pointer transition-colors duration-200"
+      style={statusInfo.style}
+      onClick={() => onEdit(entry)}
+    >
       <div className="flex flex-col space-y-4">
         <div className="flex justify-between items-start">
           <div>
             <h3 className="text-2xl font-bold text-gray-900">BA {entry.teamNumber} - {entry.name}</h3>
             <p className="text-lg text-gray-600">Entry: {entry.pressure} bar</p>
           </div>
-          <span 
+          <span
             className="inline-flex px-4 py-2 rounded-lg text-lg font-semibold"
             style={{
               backgroundColor: statusInfo.status === 'overdue' ? '#dc2626' :
@@ -207,7 +219,7 @@ function BAEntryCard({ entry, onRemove }) {
             {statusInfo.label}
           </span>
         </div>
-        
+
         <div className="grid grid-cols-2 gap-4 text-lg">
           <div>
             <span className="font-semibold text-gray-700">Entry:</span>
@@ -222,17 +234,29 @@ function BAEntryCard({ entry, onRemove }) {
             <p className="text-3xl font-mono font-bold text-gray-900">{timeRemaining}</p>
           </div>
         </div>
-        
+
         {entry.comments && (
           <div>
             <span className="font-semibold text-gray-700">Comments:</span>
             <p className="text-lg text-gray-900">{entry.comments}</p>
           </div>
         )}
-        
-        <div className="mt-4 pt-4 border-t border-gray-200">
+
+        <div className="mt-4 pt-4 border-t border-gray-200 space-y-2">
           <button
-            onClick={() => onRemove(entry)}
+            onClick={(e) => {
+              e.stopPropagation();
+              onEdit(entry);
+            }}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg text-lg font-semibold transition-all duration-200"
+          >
+            Edit Pressure & Comments
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onRemove(entry);
+            }}
             className="w-full bg-red-600 hover:bg-red-700 text-white px-4 py-3 rounded-lg text-lg font-semibold transition-all duration-200"
           >
             Remove from Board
@@ -251,6 +275,9 @@ export default function BAControlBoard() {
   const [alertedOperators, setAlertedOperators] = useState(new Set());
   const [editingStagedEntry, setEditingStagedEntry] = useState(null);
   const [editComments, setEditComments] = useState('');
+  const [editingActiveEntry, setEditingActiveEntry] = useState(null);
+  const [editActivePressure, setEditActivePressure] = useState('');
+  const [editActiveComments, setEditActiveComments] = useState('');
 
   // Load entries, staged entries and history from localStorage on mount
   useEffect(() => {
@@ -262,7 +289,7 @@ export default function BAControlBoard() {
         console.error('Error loading saved entries:', error);
       }
     }
-    
+
     const savedStagedEntries = localStorage.getItem('ba-control-staged');
     if (savedStagedEntries) {
       try {
@@ -271,7 +298,7 @@ export default function BAControlBoard() {
         console.error('Error loading saved staged entries:', error);
       }
     }
-    
+
     const savedHistory = localStorage.getItem('ba-control-history');
     if (savedHistory) {
       try {
@@ -302,21 +329,21 @@ export default function BAControlBoard() {
     const checkAlerts = () => {
       const now = new Date();
       const newAlertedOperators = new Set(alertedOperators);
-      
+
       entries.forEach(entry => {
         const operatorKey = `${entry.name}-${entry.entryTime}`;
         const whistleKey = `${operatorKey}-whistle`;
         const overdueKey = `${operatorKey}-overdue`;
-        
+
         const whistleTime = calculateWhistleTime(entry.entryTime, entry.minutesToEmpty);
         const remainingMs = whistleTime - now;
         const timeRemaining = formatTimeRemaining(remainingMs);
         const statusInfo = getStatusInfo(entry.pressure, timeRemaining);
-        
+
         // Check for whistle alert (only once per operator)
         if (statusInfo.status === 'whistle' && !alertedOperators.has(whistleKey)) {
           console.log(`Whistle alert triggered for ${entry.name}: timeRemaining=${timeRemaining}`);
-          
+
           // Try to play audio alert first
           try {
             const audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -337,23 +364,23 @@ export default function BAControlBoard() {
           } catch (error) {
             console.log('Audio alert not available:', error);
           }
-          
+
           const alertMessage = `⚠️ WHISTLE TIME ALERT ⚠️\n\nBA Team ${entry.teamNumber} - ${entry.name}\nSTATUS: WHISTLE TIME\n\nEXIT NOW - 6 MINUTES TO EMPTY!`;
           setTimeout(() => {
             alert(alertMessage);
           }, 100);
-          
+
           newAlertedOperators.add(whistleKey);
         }
-        
+
         // Check for overdue alert (only once per operator)
         if (statusInfo.status === 'overdue' && !alertedOperators.has(overdueKey)) {
           console.log(`Overdue alert triggered for ${entry.name}: timeRemaining=${timeRemaining}`);
-          
+
           // Try to play audio alert first
           try {
             const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            
+
             // Play first beep immediately
             const osc1 = audioContext.createOscillator();
             const gain1 = audioContext.createGain();
@@ -364,7 +391,7 @@ export default function BAControlBoard() {
             gain1.gain.value = 0.3;
             osc1.start();
             osc1.stop(audioContext.currentTime + 0.5);
-            
+
             // Schedule additional beeps
             setTimeout(() => {
               const osc2 = audioContext.createOscillator();
@@ -377,7 +404,7 @@ export default function BAControlBoard() {
               osc2.start();
               osc2.stop(audioContext.currentTime + 0.5);
             }, 600);
-            
+
             setTimeout(() => {
               const osc3 = audioContext.createOscillator();
               const gain3 = audioContext.createGain();
@@ -392,16 +419,16 @@ export default function BAControlBoard() {
           } catch (error) {
             console.log('Audio alert not available:', error);
           }
-          
+
           const alertMessage = `🚨 CRITICAL ALERT 🚨\n\nBA Team ${entry.teamNumber} - ${entry.name}\nSTATUS: OVERDUE\n\nIMMEDIATE EXIT REQUIRED!`;
           setTimeout(() => {
             alert(alertMessage);
           }, 100);
-          
+
           newAlertedOperators.add(overdueKey);
         }
       });
-      
+
       // Update alerted operators if any new alerts were triggered
       if (newAlertedOperators.size !== alertedOperators.size) {
         setAlertedOperators(newAlertedOperators);
@@ -411,61 +438,61 @@ export default function BAControlBoard() {
     // Check immediately and then every 10 seconds
     checkAlerts();
     const alertInterval = setInterval(checkAlerts, 10000);
-    
+
     return () => clearInterval(alertInterval);
   }, [entries, alertedOperators]);
 
   function handleAddEntry(e) {
     e.preventDefault();
-    
+
     // Validate required fields
     if (!form.name || !form.pressure || !form.entryTime) {
       return;
     }
-    
+
     const pressure = parseInt(form.pressure);
     if (isNaN(pressure)) {
       return;
     }
-    
+
     const minutesToEmpty = calculateMinutesToEmpty(pressure);
-    
+
     // Create a proper date from today + the time input
     const today = new Date();
     const [hours, minutes] = form.entryTime.split(':');
     const entryDateTime = new Date(today.getFullYear(), today.getMonth(), today.getDate(), parseInt(hours), parseInt(minutes));
-    
+
     const newEntry = {
       ...form,
       pressure,
       minutesToEmpty,
       entryTime: entryDateTime.toISOString(),
     };
-    
+
     setEntries(prevEntries => [...prevEntries, newEntry]);
     setForm({ name: '', pressure: '', entryTime: '', comments: '', teamNumber: '' });
   }
 
   function handleStageEntry(e) {
     e.preventDefault();
-    
+
     // Validate required fields for staging (no entry time needed)
     if (!form.name || !form.pressure) {
       return;
     }
-    
+
     const pressure = parseInt(form.pressure);
     if (isNaN(pressure)) {
       return;
     }
-    
+
     const newStagedEntry = {
       name: form.name,
       pressure,
       teamNumber: form.teamNumber,
       comments: form.comments,
     };
-    
+
     setStagedEntries(prevStaged => [...prevStaged, newStagedEntry]);
     setForm({ name: '', pressure: '', entryTime: '', comments: '', teamNumber: '' });
   }
@@ -488,20 +515,20 @@ export default function BAControlBoard() {
   function activateStagedEntry(stagedEntry) {
     if (confirm(`Activate ${stagedEntry.name} from BA Team ${stagedEntry.teamNumber}?`)) {
       const minutesToEmpty = calculateMinutesToEmpty(stagedEntry.pressure);
-      
+
       // Create a proper date with current time
       const now = new Date();
-      
+
       const newEntry = {
         ...stagedEntry,
         minutesToEmpty,
         entryTime: now.toISOString(),
       };
-      
+
       setEntries(prevEntries => [...prevEntries, newEntry]);
-      
+
       // Remove from staged entries
-      setStagedEntries(prevStaged => prevStaged.filter(entry => 
+      setStagedEntries(prevStaged => prevStaged.filter(entry =>
         !(entry.name === stagedEntry.name && entry.teamNumber === stagedEntry.teamNumber)
       ));
     }
@@ -509,7 +536,7 @@ export default function BAControlBoard() {
 
   function removeStagedEntry(stagedEntry) {
     if (confirm(`Remove ${stagedEntry.name} from staging?`)) {
-      setStagedEntries(prevStaged => prevStaged.filter(entry => 
+      setStagedEntries(prevStaged => prevStaged.filter(entry =>
         !(entry.name === stagedEntry.name && entry.teamNumber === stagedEntry.teamNumber)
       ));
     }
@@ -527,8 +554,8 @@ export default function BAControlBoard() {
 
   function saveEditedStagedEntry() {
     if (editingStagedEntry) {
-      setStagedEntries(prevStaged => 
-        prevStaged.map(entry => 
+      setStagedEntries(prevStaged =>
+        prevStaged.map(entry =>
           (entry.name === editingStagedEntry.name && entry.teamNumber === editingStagedEntry.teamNumber)
             ? { ...entry, comments: editComments }
             : entry
@@ -536,6 +563,46 @@ export default function BAControlBoard() {
       );
       setEditingStagedEntry(null);
       setEditComments('');
+    }
+  }
+
+  function startEditingActiveEntry(activeEntry) {
+    setEditingActiveEntry(activeEntry);
+    setEditActivePressure(activeEntry.pressure.toString());
+    setEditActiveComments(activeEntry.comments || '');
+  }
+
+  function cancelEditingActiveEntry() {
+    setEditingActiveEntry(null);
+    setEditActivePressure('');
+    setEditActiveComments('');
+  }
+
+  function saveEditedActiveEntry() {
+    if (editingActiveEntry) {
+      const newPressure = parseInt(editActivePressure);
+      if (isNaN(newPressure) || newPressure < 0 || newPressure > 400) {
+        alert('Please enter a valid pressure between 0 and 400 bar');
+        return;
+      }
+
+      const newMinutesToEmpty = calculateMinutesToEmpty(newPressure);
+
+      setEntries(prevEntries =>
+        prevEntries.map(entry =>
+          (entry.name === editingActiveEntry.name && entry.entryTime === editingActiveEntry.entryTime)
+            ? {
+                ...entry,
+                pressure: newPressure,
+                minutesToEmpty: newMinutesToEmpty,
+                comments: editActiveComments
+              }
+            : entry
+        )
+      );
+      setEditingActiveEntry(null);
+      setEditActivePressure('');
+      setEditActiveComments('');
     }
   }
 
@@ -547,14 +614,14 @@ export default function BAControlBoard() {
         ...entryToRemove,
         exitTime: exitTime
       };
-      
+
       setHistory(prevHistory => [...prevHistory, historyEntry]);
-      
+
       // Remove from active entries
-      setEntries(prevEntries => prevEntries.filter(entry => 
+      setEntries(prevEntries => prevEntries.filter(entry =>
         !(entry.name === entryToRemove.name && entry.entryTime === entryToRemove.entryTime)
       ));
-      
+
       // Clear any alerts for this operator
       const operatorKey = `${entryToRemove.name}-${entryToRemove.entryTime}`;
       setAlertedOperators(prev => {
@@ -578,7 +645,7 @@ export default function BAControlBoard() {
       const entryTime = new Date(entry.entryTime);
       const exitTime = new Date(entry.exitTime);
       const duration = Math.floor((exitTime - entryTime) / (1000 * 60));
-      
+
       csvData.push([
         `BA ${entry.teamNumber}`,
         entry.name,
@@ -590,7 +657,7 @@ export default function BAControlBoard() {
       ]);
     });
 
-    const csvContent = csvData.map(row => 
+    const csvContent = csvData.map(row =>
       row.map(field => `"${field}"`).join(',')
     ).join('\n');
 
@@ -598,7 +665,7 @@ export default function BAControlBoard() {
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
     link.setAttribute('href', url);
-    
+
     const timestamp = new Date().toISOString().split('T')[0];
     link.setAttribute('download', `BA_Operations_History_${timestamp}.csv`);
     link.style.visibility = 'hidden';
@@ -616,7 +683,7 @@ export default function BAControlBoard() {
     // Create a simple HTML document for PDF generation
     const timestamp = new Date().toLocaleString();
     const date = new Date().toISOString().split('T')[0];
-    
+
     let htmlContent = `
       <html>
       <head>
@@ -656,7 +723,7 @@ export default function BAControlBoard() {
       const entryTime = new Date(entry.entryTime);
       const exitTime = new Date(entry.exitTime);
       const duration = Math.floor((exitTime - entryTime) / (1000 * 60));
-      
+
       htmlContent += `
         <tr>
           <td>BA ${entry.teamNumber}</td>
@@ -694,7 +761,7 @@ export default function BAControlBoard() {
     printWindow.document.write(htmlContent);
     printWindow.document.close();
     printWindow.focus();
-    
+
     // Auto-trigger print dialog after content loads
     printWindow.onload = () => {
       printWindow.print();
@@ -710,34 +777,34 @@ export default function BAControlBoard() {
       'reassess': 2,   // Monitor - show fourth
       'working': 1,    // Normal - show last
     };
-    
+
     const now = new Date();
     const whistleTime = calculateWhistleTime(entry.entryTime, entry.minutesToEmpty);
     const remainingMs = whistleTime - now;
     const timeRemaining = formatTimeRemaining(remainingMs);
     const statusInfo = getStatusInfo(entry.pressure, timeRemaining);
-    
+
     // Check if any team member is in action time or worse for sorting priority
     let teamPriority = 1; // Default
     if (entry.teamNumber) {
       const teamMembers = entries.filter(e => e.teamNumber === entry.teamNumber);
-      
+
       for (const member of teamMembers) {
         const memberNow = new Date();
         const memberWhistleTime = calculateWhistleTime(member.entryTime, member.minutesToEmpty);
         const memberRemainingMs = memberWhistleTime - memberNow;
         const memberTimeRemaining = formatTimeRemaining(memberRemainingMs);
         const memberStatusInfo = getStatusInfo(member.pressure, memberTimeRemaining);
-        
+
         const memberPriority = priorityMap[memberStatusInfo.status] || 1;
         if (memberPriority > teamPriority) {
           teamPriority = memberPriority;
         }
       }
     }
-    
+
     const individualPriority = priorityMap[statusInfo.status] || 1;
-    
+
     // Return the higher of individual or team priority
     return Math.max(individualPriority, teamPriority);
   }
@@ -750,11 +817,11 @@ export default function BAControlBoard() {
         // Different teams - sort by team's highest priority
         const teamAPriority = getStatusPriority(a);
         const teamBPriority = getStatusPriority(b);
-        
+
         if (teamAPriority !== teamBPriority) {
           return teamBPriority - teamAPriority; // Higher priority team first
         }
-        
+
         // Same team priority, sort by team's shortest time remaining
         const now = new Date();
         const teamATime = Math.min(...entries.filter(e => e.teamNumber === a.teamNumber)
@@ -770,18 +837,18 @@ export default function BAControlBoard() {
         return timeA - timeB;
       }
     }
-    
+
     // Handle entries without team numbers or mixed scenarios
     const priorityA = getStatusPriority(a);
     const priorityB = getStatusPriority(b);
-    
+
     if (priorityA === priorityB) {
       const now = new Date();
       const timeA = calculateWhistleTime(a.entryTime, a.minutesToEmpty) - now;
       const timeB = calculateWhistleTime(b.entryTime, b.minutesToEmpty) - now;
       return timeA - timeB;
     }
-    
+
     return priorityB - priorityA; // Higher priority first
   });
 
@@ -798,8 +865,8 @@ export default function BAControlBoard() {
               <div className="flex items-center gap-2">
                 <p className="text-gray-600 text-lg">Breathing Apparatus Monitoring System</p>
                 <span className="text-gray-400">-</span>
-                <a 
-                  href="/about" 
+                <a
+                  href="/about"
                   className="text-red-600 hover:text-red-700 text-lg underline transition-colors"
                 >
                   more info
@@ -807,7 +874,7 @@ export default function BAControlBoard() {
               </div>
             </div>
             {(entries.length > 0 || stagedEntries.length > 0 || history.length > 0) && (
-              <button 
+              <button
                 onClick={handleClearBoard}
                 className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-semibold text-lg shadow-md hover:shadow-lg transition-all duration-200 w-full sm:w-auto"
               >
@@ -834,7 +901,7 @@ export default function BAControlBoard() {
                   required
                 />
               </div>
-              
+
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   BA Team
@@ -850,7 +917,7 @@ export default function BAControlBoard() {
                   required
                 />
               </div>
-              
+
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Pressure (bar)
@@ -866,7 +933,7 @@ export default function BAControlBoard() {
                   required
                 />
               </div>
-              
+
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Entry Time
@@ -888,7 +955,7 @@ export default function BAControlBoard() {
                   </button>
                 </div>
               </div>
-              
+
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Comments
@@ -901,15 +968,15 @@ export default function BAControlBoard() {
                 />
               </div>
             </div>
-            
+
             <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <button 
-                type="submit" 
+              <button
+                type="submit"
                 className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-4 rounded-lg font-semibold text-xl shadow-md hover:shadow-lg transition-all duration-200"
               >
                 Add Entry
               </button>
-              <button 
+              <button
                 type="button"
                 onClick={handleStageEntry}
                 className="bg-orange-600 hover:bg-orange-700 text-white px-6 py-4 rounded-lg font-semibold text-xl shadow-md hover:shadow-lg transition-all duration-200"
@@ -927,7 +994,7 @@ export default function BAControlBoard() {
               <h2 className="text-2xl font-semibold text-gray-900">Staged Crews</h2>
               <p className="text-sm text-gray-600 mt-1">RIT and standby crews ready for deployment</p>
             </div>
-            
+
             {/* Desktop Staging Table */}
             <div className="hidden lg:block overflow-x-auto">
               <table className="w-full">
@@ -947,8 +1014,8 @@ export default function BAControlBoard() {
                       <td className="px-4 py-4 text-lg font-medium text-gray-900">{entry.name}</td>
                       <td className="px-4 py-4 text-lg text-gray-900">{entry.pressure} bar</td>
                       <td className="px-4 py-4 text-lg text-gray-900">
-                        {editingStagedEntry && 
-                         editingStagedEntry.name === entry.name && 
+                        {editingStagedEntry &&
+                         editingStagedEntry.name === entry.name &&
                          editingStagedEntry.teamNumber === entry.teamNumber ? (
                           <div className="flex gap-2">
                             <input
@@ -967,8 +1034,8 @@ export default function BAControlBoard() {
                         )}
                       </td>
                       <td className="px-4 py-4 space-x-2">
-                        {editingStagedEntry && 
-                         editingStagedEntry.name === entry.name && 
+                        {editingStagedEntry &&
+                         editingStagedEntry.name === entry.name &&
                          editingStagedEntry.teamNumber === entry.teamNumber ? (
                           <>
                             <button
@@ -1017,7 +1084,7 @@ export default function BAControlBoard() {
                 </tbody>
               </table>
             </div>
-            
+
             {/* Mobile Staging Cards */}
             <div className="lg:hidden divide-y divide-gray-200">
               {stagedEntries.map((entry) => (
@@ -1032,11 +1099,11 @@ export default function BAControlBoard() {
                         Staged
                       </span>
                     </div>
-                    
+
                     <div>
                       <span className="font-semibold text-gray-700">Comments:</span>
-                      {editingStagedEntry && 
-                       editingStagedEntry.name === entry.name && 
+                      {editingStagedEntry &&
+                       editingStagedEntry.name === entry.name &&
                        editingStagedEntry.teamNumber === entry.teamNumber ? (
                         <div className="mt-2">
                           <input
@@ -1054,10 +1121,10 @@ export default function BAControlBoard() {
                         </p>
                       )}
                     </div>
-                    
+
                     <div className="mt-4 pt-4 border-t border-gray-200 space-y-2">
-                      {editingStagedEntry && 
-                       editingStagedEntry.name === entry.name && 
+                      {editingStagedEntry &&
+                       editingStagedEntry.name === entry.name &&
                        editingStagedEntry.teamNumber === entry.teamNumber ? (
                         <>
                           <button
@@ -1110,7 +1177,7 @@ export default function BAControlBoard() {
               <h2 className="text-2xl font-semibold text-gray-900">Active Entries</h2>
               <p className="text-sm text-gray-600 mt-1">Sorted by priority - Action/Whistle/Overdue shown first</p>
             </div>
-            
+
             {/* Desktop Table */}
             <div className="hidden lg:block overflow-x-auto">
               <table className="w-full">
@@ -1128,14 +1195,14 @@ export default function BAControlBoard() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {sortedEntries.map((entry, idx) => <BAEntry key={`${entry.name}-${entry.entryTime}`} entry={entry} onRemove={removeEntry} />)}
+                  {sortedEntries.map((entry, idx) => <BAEntry key={`${entry.name}-${entry.entryTime}`} entry={entry} onRemove={removeEntry} onEdit={startEditingActiveEntry} />)}
                 </tbody>
               </table>
             </div>
-            
+
             {/* Mobile Cards */}
             <div className="lg:hidden divide-y divide-gray-200">
-              {sortedEntries.map((entry, idx) => <BAEntryCard key={`${entry.name}-${entry.entryTime}`} entry={entry} onRemove={removeEntry} />)}
+              {sortedEntries.map((entry, idx) => <BAEntryCard key={`${entry.name}-${entry.entryTime}`} entry={entry} onRemove={removeEntry} onEdit={startEditingActiveEntry} />)}
             </div>
           </div>
         ) : (
@@ -1177,7 +1244,7 @@ export default function BAControlBoard() {
                 </div>
               </div>
             </div>
-            
+
             {/* Desktop History Table */}
             <div className="hidden lg:block overflow-x-auto">
               <table className="w-full">
@@ -1197,7 +1264,7 @@ export default function BAControlBoard() {
                     const entryTime = new Date(entry.entryTime);
                     const exitTime = new Date(entry.exitTime);
                     const duration = Math.floor((exitTime - entryTime) / (1000 * 60)); // Duration in minutes
-                    
+
                     return (
                       <tr key={`${entry.name}-${entry.entryTime}`} className="hover:bg-gray-50">
                         <td className="px-4 py-4 text-lg font-bold text-gray-900">BA {entry.teamNumber}</td>
@@ -1213,14 +1280,14 @@ export default function BAControlBoard() {
                 </tbody>
               </table>
             </div>
-            
+
             {/* Mobile History Cards */}
             <div className="lg:hidden divide-y divide-gray-200">
               {history.map((entry, idx) => {
                 const entryTime = new Date(entry.entryTime);
                 const exitTime = new Date(entry.exitTime);
                 const duration = Math.floor((exitTime - entryTime) / (1000 * 60));
-                
+
                 return (
                   <div key={`${entry.name}-${entry.entryTime}`} className="p-6">
                     <div className="flex flex-col space-y-4">
@@ -1233,7 +1300,7 @@ export default function BAControlBoard() {
                           Exited
                         </span>
                       </div>
-                      
+
                       <div className="grid grid-cols-2 gap-4 text-lg">
                         <div>
                           <span className="font-semibold text-gray-700">Entry:</span>
@@ -1248,7 +1315,7 @@ export default function BAControlBoard() {
                           <p className="text-2xl font-mono font-bold text-gray-900">{duration} minutes</p>
                         </div>
                       </div>
-                      
+
                       {entry.comments && (
                         <div>
                           <span className="font-semibold text-gray-700">Comments:</span>
@@ -1259,6 +1326,74 @@ export default function BAControlBoard() {
                   </div>
                 );
               })}
+            </div>
+          </div>
+        )}
+
+        {/* Edit Active Entry Modal */}
+        {editingActiveEntry && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
+              <div className="px-6 py-4 border-b">
+                <h3 className="text-xl font-semibold text-gray-900">
+                  Update BA {editingActiveEntry.teamNumber} - {editingActiveEntry.name}
+                </h3>
+                <p className="text-sm text-gray-600 mt-1">
+                  Update current pressure and comments for BA operator
+                </p>
+              </div>
+
+              <div className="px-6 py-4 space-y-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Current Pressure (bar)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="400"
+                    value={editActivePressure}
+                    onChange={(e) => setEditActivePressure(e.target.value)}
+                    className="w-full px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200"
+                    placeholder="e.g. 250"
+                    autoFocus
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Comments
+                  </label>
+                  <textarea
+                    value={editActiveComments}
+                    onChange={(e) => setEditActiveComments(e.target.value)}
+                    className="w-full px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200"
+                    placeholder="Current situation, location, etc."
+                    rows="3"
+                  />
+                </div>
+
+                <div className="bg-blue-50 p-3 rounded-lg">
+                  <p className="text-sm text-blue-800">
+                    <strong>Note:</strong> Updating pressure will recalculate exit times based on current consumption rate.
+                  </p>
+                </div>
+              </div>
+
+              <div className="px-6 py-4 border-t bg-gray-50 flex gap-3">
+                <button
+                  onClick={cancelEditingActiveEntry}
+                  className="flex-1 bg-gray-600 hover:bg-gray-700 text-white px-4 py-3 rounded-lg font-semibold transition-all duration-200"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={saveEditedActiveEntry}
+                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-semibold transition-all duration-200"
+                >
+                  Update Entry
+                </button>
+              </div>
             </div>
           </div>
         )}
