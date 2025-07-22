@@ -590,7 +590,9 @@ export default function BAControlBoard() {
 
       setEntries(prevEntries =>
         prevEntries.map(entry =>
-          (entry.name === editingActiveEntry.name && entry.entryTime === editingActiveEntry.entryTime)
+          (entry.name === editingActiveEntry.name && 
+           entry.entryTime === editingActiveEntry.entryTime && 
+           entry.teamNumber === editingActiveEntry.teamNumber)
             ? {
                 ...entry,
                 pressure: newPressure,
@@ -619,7 +621,9 @@ export default function BAControlBoard() {
 
       // Remove from active entries
       setEntries(prevEntries => prevEntries.filter(entry =>
-        !(entry.name === entryToRemove.name && entry.entryTime === entryToRemove.entryTime)
+        !(entry.name === entryToRemove.name && 
+          entry.entryTime === entryToRemove.entryTime && 
+          entry.teamNumber === entryToRemove.teamNumber)
       ));
 
       // Clear any alerts for this operator
