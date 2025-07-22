@@ -590,8 +590,8 @@ export default function BAControlBoard() {
 
       setEntries(prevEntries =>
         prevEntries.map(entry =>
-          (entry.name === editingActiveEntry.name && 
-           entry.entryTime === editingActiveEntry.entryTime && 
+          (entry.name === editingActiveEntry.name &&
+           entry.entryTime === editingActiveEntry.entryTime &&
            entry.teamNumber === editingActiveEntry.teamNumber)
             ? {
                 ...entry,
@@ -621,8 +621,8 @@ export default function BAControlBoard() {
 
       // Remove from active entries
       setEntries(prevEntries => prevEntries.filter(entry =>
-        !(entry.name === entryToRemove.name && 
-          entry.entryTime === entryToRemove.entryTime && 
+        !(entry.name === entryToRemove.name &&
+          entry.entryTime === entryToRemove.entryTime &&
           entry.teamNumber === entryToRemove.teamNumber)
       ));
 
@@ -873,7 +873,7 @@ export default function BAControlBoard() {
                   href="/about"
                   className="text-red-600 hover:text-red-700 text-lg underline transition-colors"
                 >
-                  more info
+                  how-to guide
                 </a>
               </div>
             </div>
